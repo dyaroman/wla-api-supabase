@@ -13,10 +13,10 @@ websitesRoutes.post(
   "/",
   bearerAuth({
     verifyToken: (token, c) => {
-      if (token !== Deno.env.get('API_KEY')) {
+      if (token !== Deno.env.get("API_KEY")) {
         console.log("invalid token:", token);
       }
-      return token === Deno.env.get('API_KEY');
+      return token === Deno.env.get("API_KEY");
     },
   }),
   postWebsites,
@@ -26,10 +26,10 @@ websitesRoutes.delete(
   "/",
   bearerAuth({
     verifyToken: (token, c) => {
-      if (token !== Deno.env.get('API_KEY')) {
+      if (token !== Deno.env.get("API_KEY")) {
         console.log("invalid token:", token);
       }
-      return token === Deno.env.get('API_KEY');
+      return token === Deno.env.get("API_KEY");
     },
   }),
   deleteWebsites,
