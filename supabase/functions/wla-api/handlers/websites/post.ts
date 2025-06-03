@@ -38,7 +38,7 @@ export const postWebsites = async (c) => {
       .upsert(websitesToUpsert, {
         onConflict: "env, website", // Specify the unique constraint for upsert
         ignoreDuplicates: false, // Ensure it updates if conflicts
-      });
+      }).select();
 
     if (websitesError) {
       throw new Error(`Failed to save websites: ${websitesError.message}`);
@@ -53,7 +53,7 @@ export const postWebsites = async (c) => {
           commit,
           timestamp,
         },
-        { onConflict: "env" } // Assuming 'env' is the unique key for the info table
+        { onConflict: "env" }, // Assuming 'env' is the unique key for the info table
       );
 
     if (infoError) {
@@ -68,7 +68,7 @@ export const postWebsites = async (c) => {
           env,
           columns, // Supabase can directly store JSON objects in a `jsonb` column
         },
-        { onConflict: "env" } // Assuming 'env' is the unique key for the columns table
+        { onConflict: "env" }, // Assuming 'env' is the unique key for the columns table
       );
 
     if (columnsError) {
@@ -76,7 +76,7 @@ export const postWebsites = async (c) => {
     }
 
     console.log("websites", websites?.length, commit);
-    return c.json({ count: websitesData ? websitesData.length : 0 }); // `websitesData` will contain the inserted/updated rows
+    return c.json({ count: websitesData?.length ?? 0 });
   } catch (e) {
     console.log("failed to save websites", e.message);
     return c.json({ error: e.message }, 500);
