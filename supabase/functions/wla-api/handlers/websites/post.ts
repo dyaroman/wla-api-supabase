@@ -1,68 +1,84 @@
 export const postWebsites = async (c) => {
-    // check empty body
-    const bodyText = await c.req.text();
-    if (!bodyText) {
-        console.log('empty body', bodyText);
-        return c.json({ error: 'empty body' }, 400);
+  // check empty body
+  const bodyText = await c.req.text();
+  if (!bodyText) {
+    console.log("empty body", bodyText);
+    return c.json({ error: "empty body" }, 400);
+  }
+
+  // validate payload
+  const payload = await c.req.json();
+  const { websites, commit, timestamp, columns } = payload;
+  if (
+    !websites ||
+    !Array.isArray(websites) ||
+    !websites.length ||
+    !commit ||
+    !timestamp ||
+    !columns
+  ) {
+    console.log("invalid payload", payload);
+    return c.json({ error: "invalid payload" }, 400);
+  }
+
+  const { env } = c.req.query();
+  const supabase = c.get("supabase");
+
+  try {
+    // Store websites to websites table
+    // Supabase equivalent for REPLACE INTO is `upsert`
+    const websitesToUpsert = websites.map((website) => ({
+      env,
+      website: website["website"].toLowerCase(), // Ensure lowercase as in original
+      data: website, // Supabase can directly store JSON objects in a `jsonb` column
+    }));
+
+    const { error: websitesError, data: websitesData } = await supabase
+      .from("websites")
+      .upsert(websitesToUpsert, {
+        onConflict: "env, website", // Specify the unique constraint for upsert
+        ignoreDuplicates: false, // Ensure it updates if conflicts
+      });
+
+    if (websitesError) {
+      throw new Error(`Failed to save websites: ${websitesError.message}`);
     }
 
-    // validate payload
-    const payload = await c.req.json();
-    const { websites, commit, timestamp, columns } = payload;
-    if (
-        !websites ||
-        !Array.isArray(websites) ||
-        !websites.length ||
-        !commit ||
-        !timestamp ||
-        !columns
-    ) {
-        console.log('invalid payload', payload);
-        return c.json({ error: 'invalid payload' }, 400);
+    // Store commit and timestamp into info table
+    const { error: infoError } = await supabase
+      .from("info")
+      .upsert(
+        {
+          env,
+          commit,
+          timestamp,
+        },
+        { onConflict: "env" } // Assuming 'env' is the unique key for the info table
+      );
+
+    if (infoError) {
+      throw new Error(`Failed to save info: ${infoError.message}`);
     }
 
-    const { env } = c.req.query();
+    // Store columns into columns table
+    const { error: columnsError } = await supabase
+      .from("columns")
+      .upsert(
+        {
+          env,
+          columns, // Supabase can directly store JSON objects in a `jsonb` column
+        },
+        { onConflict: "env" } // Assuming 'env' is the unique key for the columns table
+      );
 
-    try {
-        // store websites to websites table
-        const stmt = c.env.DB.prepare(`
-      REPLACE
-      INTO websites (env, website, data)
-      VALUES (?, LOWER(?), ?)
-    `);
-
-        const batch = [];
-        for (const website of websites) {
-            batch.push(stmt.bind(env, website['website'], JSON.stringify(website)));
-        }
-        const result = await c.env.DB.batch(batch);
-
-        // store commit and timestamp into info table
-        await c.env.DB.prepare(
-            `
-        REPLACE
-        INTO info (env, "commit", timestamp)
-        VALUES (?, ?, ?)
-      `,
-        )
-            .bind(env, commit, timestamp)
-            .run();
-
-        // store columns into columns table
-        await c.env.DB.prepare(
-            `
-        REPLACE
-        INTO columns (env, columns)
-        VALUES (?, ?)
-      `,
-        )
-            .bind(env, JSON.stringify(columns))
-            .run();
-
-        console.log('websites', websites?.length, commit);
-        return c.json({ count: result.length });
-    } catch (e) {
-        console.log('failed to save websites', e.message);
-        return c.json({ error: e.message }, 500);
+    if (columnsError) {
+      throw new Error(`Failed to save columns: ${columnsError.message}`);
     }
+
+    console.log("websites", websites?.length, commit);
+    return c.json({ count: websitesData ? websitesData.length : 0 }); // `websitesData` will contain the inserted/updated rows
+  } catch (e) {
+    console.log("failed to save websites", e.message);
+    return c.json({ error: e.message }, 500);
+  }
 };
