@@ -1,5 +1,7 @@
+import { getDefaultEnv } from "../../config.ts";
+
 export const getCombined = async (c) => {
-  const { env } = c.req.query();
+  const env = getDefaultEnv();
   const supabase = c.get("supabase"); // Get the Supabase client instance
 
   try {

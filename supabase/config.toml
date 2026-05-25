@@ -51,11 +51,7 @@ max_client_conn = 100
 schema_paths = []
 
 [db.seed]
-# If enabled, seeds the database after migrations during a db reset.
-enabled = true
-# Specifies an ordered list of seed files to load during db reset.
-# Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./seed.sql"]
+enabled = false
 
 [realtime]
 enabled = true
@@ -309,7 +305,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [functions.wla-api]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/wla-api/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx

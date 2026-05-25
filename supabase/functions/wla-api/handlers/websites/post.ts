@@ -1,3 +1,5 @@
+import { getDefaultEnv } from "../../config.ts";
+
 export const postWebsites = async (c) => {
   // check empty body
   const bodyText = await c.req.text();
@@ -7,7 +9,14 @@ export const postWebsites = async (c) => {
   }
 
   // validate payload
-  const payload = await c.req.json();
+  let payload;
+  try {
+    payload = JSON.parse(bodyText);
+  } catch (_error) {
+    console.log("invalid json payload");
+    return c.json({ error: "invalid payload" }, 400);
+  }
+
   const { websites, commit, timestamp, columns } = payload;
   if (
     !websites ||
@@ -21,7 +30,7 @@ export const postWebsites = async (c) => {
     return c.json({ error: "invalid payload" }, 400);
   }
 
-  const { env } = c.req.query();
+  const env = getDefaultEnv();
   const supabase = c.get("supabase");
 
   try {

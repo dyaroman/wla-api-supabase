@@ -1,5 +1,7 @@
+import { getDefaultEnv } from "../../config.ts";
+
 export const getWebsites = async (c) => {
-  const { env } = c.req.query();
+  const env = getDefaultEnv();
   const supabase = c.get("supabase");
 
   const { data: websites, error } = await supabase

@@ -2,7 +2,7 @@ import { Hono } from "jsr:@hono/hono";
 import { cors } from "jsr:@hono/hono/cors";
 import { etag } from "jsr:@hono/hono/etag";
 
-import { validateEnv } from "./middlewares/validateEnv.ts";
+import { getAllowedOrigins } from "./config.ts";
 import { supabaseMiddleware } from "./middlewares/supabase.ts";
 import { websitesRoutes } from "./routes/websites.ts";
 import { getCommit } from "./handlers/commit/get.ts";
@@ -10,20 +10,21 @@ import { getCombined } from "./handlers/combined/get.ts";
 
 const functionName = "wla-api";
 const app = new Hono().basePath(`/${functionName}`);
-
-// validate env query param
-app.use(validateEnv);
+const allowedOrigins = new Set(getAllowedOrigins());
+const localOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 // CORS
 app.use(
   "/*",
   cors({
     origin: (origin) => {
-      if (origin.includes("dyaroman.github.io") || origin.includes("localhost")) {
+      if (allowedOrigins.has(origin) || localOriginPattern.test(origin)) {
         return origin;
       }
       return "";
     },
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowHeaders: ["Authorization", "Content-Type"],
     exposeHeaders: ["ETag"],
   }),
 );

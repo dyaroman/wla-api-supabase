@@ -1,3 +1,5 @@
+import { getDefaultEnv } from "../../config.ts";
+
 export const deleteWebsites = async (c) => {
   // check empty body
   const bodyText = await c.req.text();
@@ -7,8 +9,14 @@ export const deleteWebsites = async (c) => {
   }
 
   // validate payload
-  // Assuming the payload is an array of website strings, e.g., ["example.com", "another.org"]
-  const websitesToDelete = await c.req.json();
+  let websitesToDelete;
+  try {
+    websitesToDelete = JSON.parse(bodyText);
+  } catch (_error) {
+    console.log("invalid json payload");
+    return c.json({ error: "invalid payload" }, 400);
+  }
+
   if (
     !websitesToDelete || !Array.isArray(websitesToDelete) ||
     !websitesToDelete.length
@@ -17,7 +25,7 @@ export const deleteWebsites = async (c) => {
     return c.json({ error: "invalid payload" }, 400);
   }
 
-  const { env } = c.req.query(); // Assuming 'env' still comes from query params
+  const env = getDefaultEnv();
   const supabase = c.get("supabase"); // Get the Supabase client instance
 
   try {
@@ -26,7 +34,7 @@ export const deleteWebsites = async (c) => {
     const { error, data } = await supabase
       .from("websites")
       .delete()
-      .eq("env", env) // Filter by environment
+      .eq("env", env)
       .in("website", websitesToDelete.map((website) => website.toLowerCase())) // Filter by websites array, ensure lowercase
       .select(); // Request the count of deleted rows
 

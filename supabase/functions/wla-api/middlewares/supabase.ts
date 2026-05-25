@@ -6,6 +6,8 @@ import { MiddlewareHandler } from "jsr:@hono/hono";
 export type Bindings = {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
+  SERVICE_ROLE_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
 };
 
 // Extend Hono's Context to include the Supabase client
@@ -22,19 +24,20 @@ export const supabaseMiddleware: MiddlewareHandler = async (c, next) => {
   // Get Supabase credentials from environment variables
   // IMPORTANT: For Supabase Edge Functions, use Deno.env.get()
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseKey = Deno.env.get("SERVICE_ROLE_KEY") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabaseKey) {
     // Consider throwing an error or handling this more gracefully
     // depending on your application's requirements
     console.error(
-      "Supabase URL or Anon Key is not set in environment variables.",
+      "Supabase URL or API key is not set in environment variables.",
     );
     return c.json({ error: "Supabase configuration missing" }, 500);
   }
 
   // Initialize Supabase client
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   // Attach the supabase client to the context using c.set
   // The key 'supabase' is what you'll use to retrieve it later with c.get('supabase')
