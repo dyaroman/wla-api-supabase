@@ -9,7 +9,6 @@ const websiteSchema = z.object({ website: z.string().min(1) }).passthrough();
 const postBodySchema = z.object({
   websites: z.array(websiteSchema).min(1),
   commit: z.string().min(1),
-  timestamp: z.string().min(1),
   columns: z.array(z.record(z.unknown())),
 });
 
@@ -31,7 +30,7 @@ export const postWebsites = async (c: Context<AppEnv>) => {
     );
   }
 
-  const { websites, commit, timestamp, columns } = result.data;
+  const { websites, commit, columns } = result.data;
   const env = getDefaultEnv();
   const supabase = c.get("supabase");
 
@@ -39,7 +38,6 @@ export const postWebsites = async (c: Context<AppEnv>) => {
     const { data: count, error } = await supabase.rpc("upsert_websites_data", {
       p_env: env,
       p_commit: commit,
-      p_timestamp: timestamp,
       p_columns: columns,
       p_websites: websites,
     });

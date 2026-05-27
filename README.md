@@ -14,7 +14,7 @@ Three tables in `public`, all scoped by `env` (default: `demo`):
 
 | Table | Key | Purpose |
 |-------|-----|---------|
-| `info` | `env` | Stores latest `commit` hash and `timestamp` |
+| `info` | `env` | Stores latest `commit` hash (`timestamp` is computed at request time in Kyiv timezone, not stored) |
 | `columns` | `env` | Stores column definitions as JSONB |
 | `websites` | `(env, website)` | Stores website records with full JSONB `data` |
 
@@ -54,7 +54,6 @@ curl -X POST "https://<project-ref>.supabase.co/functions/v1/wla-api/websites" \
   -d '{
     "websites":[{"website":"example.com"}],
     "commit":"abc123",
-    "timestamp":"2026-05-25T00:00:00Z",
     "columns":[{"key":"campaignId","label":"Campaign ID"}]
   }'
 

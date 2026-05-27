@@ -1,7 +1,7 @@
 import type { Context } from "jsr:@hono/hono";
 
 import type { AppEnv } from "../../types.ts";
-import { getDefaultEnv } from "../../config.ts";
+import { getDefaultEnv, getKyivTimestamp } from "../../config.ts";
 
 export const getCombined = async (c: Context<AppEnv>) => {
   const env = getDefaultEnv();
@@ -11,7 +11,7 @@ export const getCombined = async (c: Context<AppEnv>) => {
     const [infoResult, columnsResult, websitesResult] = await Promise.all([
       supabase
         .from("info")
-        .select("commit, timestamp")
+        .select("commit")
         .eq("env", env)
         .single(),
 
@@ -30,7 +30,8 @@ export const getCombined = async (c: Context<AppEnv>) => {
     if (infoResult.error && infoResult.error.code !== "PGRST116") {
       throw new Error(`Failed to fetch info data: ${infoResult.error.message}`);
     }
-    const { commit, timestamp } = infoResult.data ?? {};
+    const { commit } = infoResult.data ?? {};
+    const timestamp = getKyivTimestamp();
 
     if (columnsResult.error && columnsResult.error.code !== "PGRST116") {
       throw new Error(
