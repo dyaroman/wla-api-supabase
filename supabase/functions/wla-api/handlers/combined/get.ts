@@ -1,58 +1,52 @@
+import type { Context } from "jsr:@hono/hono";
+
+import type { AppEnv } from "../../types.ts";
 import { getDefaultEnv } from "../../config.ts";
 
-export const getCombined = async (c) => {
+export const getCombined = async (c: Context<AppEnv>) => {
   const env = getDefaultEnv();
-  const supabase = c.get("supabase"); // Get the Supabase client instance
+  const supabase = c.get("supabase");
 
   try {
-    // Use Promise.all to fetch data from all three tables concurrently
     const [infoResult, columnsResult, websitesResult] = await Promise.all([
-      // Get data from info table
       supabase
         .from("info")
-        .select("commit, timestamp") // Select specific columns
+        .select("commit, timestamp")
         .eq("env", env)
-        .single(), // Expect a single row for info
+        .single(),
 
-      // Get data from columns table
       supabase
         .from("columns")
-        .select("columns") // Select the 'columns' column (assuming it's jsonb)
+        .select("columns")
         .eq("env", env)
-        .single(), // Expect a single row for columns
+        .single(),
 
-      // Get data from websites table
       supabase
         .from("websites")
-        .select("data") // Select the 'data' column (assuming it's jsonb)
+        .select("data")
         .eq("env", env),
     ]);
 
-    // --- Process infoData ---
-    if (infoResult.error && infoResult.error.code !== "PGRST116") { // PGRST116 is "no rows found"
+    if (infoResult.error && infoResult.error.code !== "PGRST116") {
       throw new Error(`Failed to fetch info data: ${infoResult.error.message}`);
     }
     const { commit, timestamp } = infoResult.data ?? {};
 
-    // --- Process columnsData ---
     if (columnsResult.error && columnsResult.error.code !== "PGRST116") {
       throw new Error(
         `Failed to fetch columns data: ${columnsResult.error.message}`,
       );
     }
-    // Supabase returns JSONB columns as parsed JavaScript objects
-    const columns = columnsResult.data?.columns ?? {}; // Access directly, no need for JSON.parse
+    const columns = columnsResult.data?.columns ?? [];
 
-    // --- Process websitesData ---
     if (websitesResult.error) {
       throw new Error(
         `Failed to fetch websites data: ${websitesResult.error.message}`,
       );
     }
-    // Supabase returns JSONB columns as parsed JavaScript objects directly
-    const websites = websitesResult.data?.map((row) => row.data) ?? []; // Map to get the 'data' object
+    const websites = websitesResult.data?.map((row) => row.data) ?? [];
 
-    console.log("websites", websites?.length, "commit", commit);
+    console.log("websites", websites.length, "commit", commit);
 
     return c.json({
       commit,

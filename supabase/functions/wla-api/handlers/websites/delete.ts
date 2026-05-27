@@ -1,48 +1,40 @@
+import type { Context } from "jsr:@hono/hono";
+
+import type { AppEnv } from "../../types.ts";
 import { getDefaultEnv } from "../../config.ts";
 
-export const deleteWebsites = async (c) => {
-  // check empty body
-  const bodyText = await c.req.text();
-  if (!bodyText) {
-    console.log("empty body", bodyText);
-    return c.json({ error: "empty body" }, 400);
-  }
-
-  // validate payload
-  let websitesToDelete;
+export const deleteWebsites = async (c: Context<AppEnv>) => {
+  let websitesToDelete: unknown;
   try {
-    websitesToDelete = JSON.parse(bodyText);
-  } catch (_error) {
+    websitesToDelete = await c.req.json();
+  } catch {
     console.log("invalid json payload");
     return c.json({ error: "invalid payload" }, 400);
   }
 
   if (
-    !websitesToDelete || !Array.isArray(websitesToDelete) ||
-    !websitesToDelete.length
+    !Array.isArray(websitesToDelete) ||
+    websitesToDelete.length === 0
   ) {
     console.log("invalid payload", websitesToDelete);
     return c.json({ error: "invalid payload" }, 400);
   }
 
   const env = getDefaultEnv();
-  const supabase = c.get("supabase"); // Get the Supabase client instance
+  const supabase = c.get("supabase");
 
   try {
-    // Delete websites from the websites table
-    // Supabase equivalent for DELETE with multiple conditions
     const { error, data } = await supabase
       .from("websites")
       .delete()
       .eq("env", env)
-      .in("website", websitesToDelete.map((website) => website.toLowerCase())) // Filter by websites array, ensure lowercase
-      .select(); // Request the count of deleted rows
+      .in("website", websitesToDelete.map((w) => String(w).toLowerCase()))
+      .select();
 
     if (error) {
       throw new Error(`Failed to delete websites: ${error.message}`);
     }
 
-    // The `count` property from the Supabase response directly gives the number of affected rows
     console.log("Deleted websites:", websitesToDelete, "Count:", data?.length);
     return c.json({ count: data?.length ?? 0 });
   } catch (e) {

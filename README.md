@@ -121,7 +121,7 @@ CORS_ORIGINS=http://localhost:5173
    supabase link --project-ref <project-ref>
    ```
 
-3. Push database migrations:
+3. Push database migrations (**must run before deploying the function**):
 
    ```sh
    supabase db push

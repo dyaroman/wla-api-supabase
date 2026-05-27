@@ -1,6 +1,9 @@
+import type { Context } from "jsr:@hono/hono";
+
+import type { AppEnv } from "../../types.ts";
 import { getDefaultEnv } from "../../config.ts";
 
-export const getWebsites = async (c) => {
+export const getWebsites = async (c: Context<AppEnv>) => {
   const env = getDefaultEnv();
   const supabase = c.get("supabase");
 
@@ -20,7 +23,6 @@ export const getWebsites = async (c) => {
     );
   }
 
-  // Handle case where no websites are found for the given env
   if (!websites || websites.length === 0) {
     console.log(`No websites found for environment: ${env}`);
     return c.json([]);
